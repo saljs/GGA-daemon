@@ -1,0 +1,13 @@
+[Unit]
+Description=GGA buttons and battery daemon
+After=local-fs.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/usr/local/bin/GGA
+
+[Install]
+WantedBy=multi-user.target
