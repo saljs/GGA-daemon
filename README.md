@@ -2,7 +2,7 @@
 
 This is a daemon I wrote to for a handheld gaming system I'm making based on a
 Raspberry Pi 5. It reads from an INA219 battery gauge and an
-(Adafruit Arcade Bonnet)[https://www.adafruit.com/product/3422], keeps track of
+[Adafruit Arcade Bonnet](https://www.adafruit.com/product/3422), keeps track of
 battery level, and simulates keyboard presses.
 
 Battery percentage is output to `/run/bat/capacity`, and the charging status of
