@@ -58,9 +58,10 @@ const static unsigned int KEYCODES[] = {
 };    
 
 // Global variables
-int verbose = 0;
+int verbose = 0, batt_charging_last = 0, batt_percentage_last = 0;
 ina219_config* battery_gauge = NULL;
 arcade_bonnet* buttons = NULL;
+struct libevdev *dev = NULL;
 struct libevdev_uinput *uidev = NULL;
 
 // Exit handler
@@ -69,6 +70,7 @@ void close_resources()
     if (buttons) close_arcade_bonnet(buttons);
     if (battery_gauge) close_ina219(battery_gauge);
     if (uidev) libevdev_uinput_destroy(uidev);
+    if (dev) libevdev_free(dev);
 }
 void exit_handler(int signal)
 {
@@ -81,30 +83,39 @@ void exit_handler(int signal)
 void battery_handler(double percentage, int charging)
 {
     int statusfile, capacityfile, p = (int)round(percentage * 100);
-    statusfile = open(BATTERY_OUTPUT_DIR "/status",
-        O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    if (statusfile < 0)
+    if (charging != batt_charging_last)
     {
-        fprintf(stderr,
-            "Error: cannot create files in " BATTERY_OUTPUT_DIR "\n");
-        close_resources();
-        exit(-1);
-    }
-    capacityfile = open(BATTERY_OUTPUT_DIR "/capacity",
-        O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    
-    if (capacityfile < 0)
-    {
-        fprintf(stderr,
-            "Error: cannot create files in " BATTERY_OUTPUT_DIR "\n");
-        close_resources();
+        batt_charging_last = charging;
+        statusfile = open(BATTERY_OUTPUT_DIR "/status",
+            O_CREAT | O_TRUNC | O_WRONLY,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        if (statusfile < 0)
+        {
+            fprintf(stderr,
+                "Error: cannot create files in " BATTERY_OUTPUT_DIR "\n");
+            close_resources();
+            exit(-1);
+        }
+        dprintf(statusfile, "%s\n", charging ? "Charging" : "Discharging");
         close(statusfile);
-        exit(-1);
     }
-    dprintf(statusfile, "%s\n", charging ? "Charging" : "Discharging");
-    dprintf(capacityfile, "%d\n", p);
-    close(statusfile);
-    close(capacityfile);
+    if (p != batt_percentage_last)
+    {
+        batt_percentage_last = p;
+        capacityfile = open(BATTERY_OUTPUT_DIR "/capacity", 
+            O_CREAT | O_TRUNC | O_WRONLY,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        if (capacityfile < 0)
+        {
+            fprintf(stderr,
+                "Error: cannot create files in " BATTERY_OUTPUT_DIR "\n");
+            close_resources();
+            if (statusfile > 0) close(statusfile);
+            exit(-1);
+        }
+        dprintf(capacityfile, "%d\n", p);
+        close(capacityfile);
+    }
 
     if (percentage <= BATTERY_SHUTDOWN_LIMIT && !charging)
     {
@@ -148,7 +159,6 @@ void button_handler(arcade_buttons last_state, arcade_buttons curr_state,
 int main(int argc, char** argv)
 {
     struct timespec current_ts, last_ts;
-    struct libevdev *dev;
     arcade_buttons last_state;
     int enable_buttons = 1, enable_battery = 1;
     double battery_capacity[BATTERY_SAMPLE_BUFFER];
@@ -195,6 +205,7 @@ int main(int argc, char** argv)
             dev, LIBEVDEV_UINPUT_OPEN_MANAGED, &uidev) != 0)
         {
             fprintf(stderr, "Error: cannot create keyboard device!\n");
+            close_resources();
             return -1;
         }
         // Initialize arcade bonnet
