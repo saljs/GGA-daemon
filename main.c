@@ -130,7 +130,7 @@ void check_press_button(arcade_buttons button, arcade_buttons change,
 {
     if (change & button)
     {
-        int pressed = (current & button) > 0;
+        int pressed = (current & button) == 0;
         if (verbose) printf("Button %d state %d\n", button, pressed);
         libevdev_uinput_write_event(uidev, EV_KEY, key, pressed);
     }
