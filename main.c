@@ -41,24 +41,24 @@
 
 // Key codes needed
 const static unsigned int KEYCODES[] = {
-    KEY_LEFTCTRL,   // START
-    KEY_ENTER,      // SELECT
-    KEY_X,          // A
-    KEY_Z,          // B
-    KEY_S,          // X
     KEY_A,          // Y
-    KEY_1,          // LT
-    KEY_2,          // RT
+    KEY_X,          // A
+    KEY_S,          // X
+    KEY_Z,          // B
+    KEY_ENTER,      // SELECT
+    KEY_LEFTCTRL,   // START
     KEY_8,          // LB
     KEY_9,          // RB
-    KEY_RIGHT,
-    KEY_LEFT,
-    KEY_DOWN,
+    KEY_1,          // LT
+    KEY_2,          // RT
     KEY_UP,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
 };    
 
 // Global variables
-int verbose = 0, batt_charging_last = 0, batt_percentage_last = 0;
+int verbose = 0, batt_charging_last = -1, batt_percentage_last = -1;
 ina219_config* battery_gauge = NULL;
 arcade_bonnet* buttons = NULL;
 struct libevdev *dev = NULL;
@@ -133,7 +133,6 @@ void check_press_button(arcade_buttons button, arcade_buttons change,
         int pressed = (current & button) > 0;
         if (verbose) printf("Button %d state %d\n", button, pressed);
         libevdev_uinput_write_event(uidev, EV_KEY, key, pressed);
-        libevdev_uinput_write_event(uidev, EV_SYN, SYN_REPORT, 0);
     }
 }
 void button_handler(arcade_buttons last_state, arcade_buttons curr_state,
@@ -154,6 +153,7 @@ void button_handler(arcade_buttons last_state, arcade_buttons curr_state,
     check_press_button(STICK_LEFT,  changes, curr_state, KEYCODES[11]); 
     check_press_button(STICK_DOWN,  changes, curr_state, KEYCODES[12]);
     check_press_button(STICK_UP,    changes, curr_state, KEYCODES[13]);
+    libevdev_uinput_write_event(uidev, EV_SYN, SYN_REPORT, 0);
 } 
 
 int main(int argc, char** argv)
