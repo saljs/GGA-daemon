@@ -41,12 +41,12 @@
 
 // Key codes needed
 const static unsigned int KEYCODES[] = {
-    KEY_A,          // Y
-    KEY_X,          // A
-    KEY_S,          // X
-    KEY_Z,          // B
-    KEY_ENTER,      // SELECT
-    KEY_LEFTCTRL,   // START
+    KEY_ENTER,      // Y
+    KEY_A,          // A
+    KEY_X,          // X
+    KEY_ESC,        // B
+    KEY_B,          // SELECT
+    KEY_S,          // START
     KEY_8,          // LB
     KEY_9,          // RB
     KEY_1,          // LT
@@ -253,12 +253,9 @@ int main(int argc, char** argv)
             return -1;
         }
         // Set up battery monitoring
+        memset(battery_capacity, 0, BATTERY_SAMPLE_BUFFER * sizeof(double));
         battery_capacity[0] = estimate_battery_percentage(
             BATTERY_MIN_VOLTAGE, battery_gauge) * BATTERY_CAPACITY_MAH;
-        for (int i = 1; i < BATTERY_SAMPLE_BUFFER; i++)
-        {
-            battery_capacity[i] = battery_capacity[0];
-        }
         clock_gettime(CLOCK_REALTIME, &last_ts);
     }
 
@@ -316,8 +313,7 @@ int main(int argc, char** argv)
                 }
                 battery_capacity[0] = new_capacity;
                 cap_avg_new += new_capacity;
-                charging = cap_avg_new / (BATTERY_SAMPLE_BUFFER / 2) >= 
-                    cap_avg_first / (BATTERY_SAMPLE_BUFFER / 2);
+                charging = cap_avg_new >= cap_avg_first;
 
                 last_ts = current_ts;
                 battery_handler(new_capacity / BATTERY_CAPACITY_MAH, charging);
