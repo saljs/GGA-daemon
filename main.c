@@ -298,17 +298,17 @@ int main(int argc, char** argv)
                 double current = get_current(battery_gauge);
                 double new_capacity = last_capacity + 
                     (current * ((double)ms_passed / 3.6e6));
-                int charging = 1;
+                int charging = 0;
                 
+                battery_current_history[0] = current;
                 for (int i = BATTERY_SAMPLE_BUFFER - 1; i > 0; i--)
                 {
                     battery_current_history[i] = battery_current_history[i - 1];
                     if (battery_current_history[i] > 0)
                     {
-                        charging = 0;
+                        charging = 1;
                     }
                 }
-                battery_current_history[0] = current;
                 last_capacity = new_capacity;
                 last_ts = current_ts;
                 battery_handler(new_capacity / BATTERY_CAPACITY_MAH, charging);
