@@ -162,6 +162,7 @@ int main(int argc, char** argv)
     arcade_buttons last_state;
     int enable_buttons = 1, enable_battery = 1;
     double battery_current_history[BATTERY_SAMPLE_BUFFER];
+    double last_capacity;
 
     // Handle flags
     while (argc > 1)
@@ -253,8 +254,9 @@ int main(int argc, char** argv)
             return -1;
         }
         // Set up battery monitoring
-        memset(battery_current_history, 0, BATTERY_SAMPLE_BUFFER * sizeof(double));
-        battery_current_history[0] = estimate_battery_percentage(
+        memset(battery_current_history, 0,
+            BATTERY_SAMPLE_BUFFER * sizeof(double));
+        last_capacity = estimate_battery_percentage(
             BATTERY_MIN_VOLTAGE, battery_gauge) * BATTERY_CAPACITY_MAH;
         clock_gettime(CLOCK_REALTIME, &last_ts);
     }
@@ -294,7 +296,7 @@ int main(int argc, char** argv)
             {
                 double shunt_voltage = get_shunt_voltage(battery_gauge);
                 double current = get_current(battery_gauge);
-                double new_capacity = battery_current_history[0] + 
+                double new_capacity = last_capacity + 
                     (current * ((double)ms_passed / 3.6e6));
                 int charging = 1;
                 
@@ -307,6 +309,7 @@ int main(int argc, char** argv)
                     }
                 }
                 battery_current_history[0] = current;
+                last_capacity = new_capacity;
                 last_ts = current_ts;
                 battery_handler(new_capacity / BATTERY_CAPACITY_MAH, charging);
                 
