@@ -41,11 +41,11 @@
 
 // Key codes needed
 const static unsigned int KEYCODES[] = {
-    KEY_ENTER,      // Y
-    KEY_A,          // A
+    KEY_Y,          // Y
+    KEY_ENTER,      // A
     KEY_X,          // X
     KEY_ESC,        // B
-    KEY_B,          // SELECT
+    KEY_LEFTCTRL,   // SELECT
     KEY_S,          // START
     KEY_8,          // LB
     KEY_9,          // RB
