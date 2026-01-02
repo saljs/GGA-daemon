@@ -53,8 +53,8 @@ const static unsigned int KEYCODES[] = {
     KEY_2,          // RT
     KEY_UP,
     KEY_DOWN,
-    KEY_LEFT,
     KEY_RIGHT,
+    KEY_LEFT,
 };    
 
 // Global variables
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
     struct timespec current_ts, last_ts;
     arcade_buttons last_state;
     int enable_buttons = 1, enable_battery = 1;
-    double battery_capacity[BATTERY_SAMPLE_BUFFER];
+    double battery_current_history[BATTERY_SAMPLE_BUFFER];
 
     // Handle flags
     while (argc > 1)
@@ -253,8 +253,8 @@ int main(int argc, char** argv)
             return -1;
         }
         // Set up battery monitoring
-        memset(battery_capacity, 0, BATTERY_SAMPLE_BUFFER * sizeof(double));
-        battery_capacity[0] = estimate_battery_percentage(
+        memset(battery_current_history, 0, BATTERY_SAMPLE_BUFFER * sizeof(double));
+        battery_current_history[0] = estimate_battery_percentage(
             BATTERY_MIN_VOLTAGE, battery_gauge) * BATTERY_CAPACITY_MAH;
         clock_gettime(CLOCK_REALTIME, &last_ts);
     }
@@ -294,27 +294,19 @@ int main(int argc, char** argv)
             {
                 double shunt_voltage = get_shunt_voltage(battery_gauge);
                 double current = get_current(battery_gauge);
-                double new_capacity = battery_capacity[0] + 
+                double new_capacity = battery_current_history[0] + 
                     (current * ((double)ms_passed / 3.6e6));
-                double cap_avg_new = 0, cap_avg_first = 0;
-                int charging;
+                int charging = 1;
                 
-                for (int i = 1; i < BATTERY_SAMPLE_BUFFER; i++)
+                for (int i = BATTERY_SAMPLE_BUFFER - 1; i > 0; i--)
                 {
-                    battery_capacity[i] = battery_capacity[i - 1];
-                    if (i < BATTERY_SAMPLE_BUFFER / 2)
+                    battery_current_history[i] = battery_current_history[i - 1];
+                    if (battery_current_history[i] > 0)
                     {
-                        cap_avg_new += battery_capacity[i];
-                    }
-                    else
-                    {
-                        cap_avg_first += battery_capacity[i];
+                        charging = 0;
                     }
                 }
-                battery_capacity[0] = new_capacity;
-                cap_avg_new += new_capacity;
-                charging = cap_avg_new >= cap_avg_first;
-
+                battery_current_history[0] = current;
                 last_ts = current_ts;
                 battery_handler(new_capacity / BATTERY_CAPACITY_MAH, charging);
                 
