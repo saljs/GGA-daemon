@@ -45,9 +45,9 @@ const static unsigned int KEYCODES[] = {
     KEY_LEFTCTRL,   // SELECT
     KEY_S,          // START
     KEY_ENTER,      // A
-    KEY_Y,          // Y
+    KEY_TAB,        // Y
     KEY_ESC,        // B
-    KEY_X,          // X
+    KEY_SPACE,      // X
 
     KEY_9,          // RB
     KEY_2,          // RT
